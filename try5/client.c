@@ -4,6 +4,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <unistd.h>
+#include <limits.h>
 
 #define SHM_SIZE 1024
 
@@ -43,7 +44,7 @@ int main() {
 
     while (1) {
         char input[10];
-        printf("Enter 'a' for arithmetic operation or 'e' for even/odd check: ");
+        printf("Enter 'a' for arithmetic operation, 'e' for even/odd check, 'p' for prime check, 'n' for negative check: ");
         fgets(input, sizeof(input), stdin);
         input[strcspn(input, "\n")] = '\0'; // Remove the newline character from the input string
 
@@ -73,6 +74,12 @@ int main() {
             shm_req->operator = ' '; // Set the operator to a space character since it's not needed for this operation
             getchar(); // Consume the newline character left in the input buffer by scanf()
         }
+        else if(strcmp(input, "n") == 0) {
+            shm_req->type = 'n';
+            shm_req->operand1 = 0;
+            shm_req->operand2 = 0;
+            shm_req->operator = ' ';
+        }
         else {
             printf("Invalid input. Please try again.\n");
             continue;
@@ -81,8 +88,16 @@ int main() {
         while (shm_req->type != '\0') { // Wait until the server processes the request
             sleep(1);
         }
-
-        printf("Result: %d\n", shm_res->result);
+        
+        if(shm_res->result == INT_MIN) {
+            printf("isNegative: Not Supported\n");
+        }
+        else if(shm_res->result == INT_MAX) {
+            printf("Divide by zero not allowed\n");
+        }
+        else {
+            printf("Result: %d\n", shm_res->result);
+        }
 
         // Set the request type back to null to indicate that the server can accept another request
         shm_req->type = '\0';

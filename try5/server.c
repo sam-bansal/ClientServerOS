@@ -5,6 +5,7 @@
 #include <sys/shm.h>
 #include <unistd.h>
 #include <math.h>
+#include <limits.h>
 
 #define SHM_SIZE 1024
 
@@ -74,7 +75,12 @@ int main() {
                     shm_res->result = shm_req->operand1 * shm_req->operand2;
                     break;
                 case '/':
-                    shm_res->result = shm_req->operand1 / shm_req->operand2;
+                    if(shm_req->operand2 == 0) {
+                        shm_res->result = INT_MAX;
+                    }
+                    else {
+                        shm_res->result = shm_req->operand1 / shm_req->operand2;
+                    }
                     break;
                 default:
                     printf("Invalid operator: %c\n", shm_req->operator);
@@ -88,6 +94,8 @@ int main() {
             }
         } else if (shm_req->type == 'p') { // isPrime check
             shm_res->result = is_prime(shm_req->operand1);
+        } else if(shm_req->type == 'n') {
+            shm_res->result = INT_MIN;
         }
 
         shm_req->type = '\0'; // Set the request type back to null to indicate that the request has been processed
