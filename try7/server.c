@@ -1,95 +1,67 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 #include <pthread.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
-#define SHM_SIZE 1024
+#define SHARED_MEM_NAME "/my_shared_mem"
+#define MAX_CLIENTS 10
 
-// Define the shared memory structure
-typedef struct {
-    int client_id;
-    char message[SHM_SIZE];
-} shared_memory;
+int shared_mem_fd;
+int *shared_mem_ptr;
+int num_clients = 0;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-// Define the mutex lock
-pthread_mutex_t mutex;
-
-void* handle_client(void* arg) {
-    // Cast the argument to the shared memory structure
-    shared_memory* shm = (shared_memory*) arg;
-    
-    // Loop to handle client requests
-    while (1) {
-        // Acquire the lock
-        pthread_mutex_lock(&mutex);
-
-        // Check if the client has sent a message
-        if (shm->client_id != -1) {
-            // Print the message received from the client
-            printf("Client %d says: %s\n", shm->client_id, shm->message);
-
-            // Reset the shared memory values
-            shm->client_id = -1;
-            memset(shm->message, 0, SHM_SIZE);
-        }
-
-        // Release the lock
-        pthread_mutex_unlock(&mutex);
-
-        // Sleep for some time to avoid busy waiting
-        usleep(1000);
-    }
+void *print_number(void *arg) {
+    int client_id = *(int *)arg;
+    printf("Client %d requested to print a number\n", client_id);
+    // Generate a random number between 1 and 100
+    int num = rand() % 100 + 1;
+    printf("Number generated for client %d: %d\n", client_id, num);
+    return NULL;
 }
 
 int main() {
-    // Generate the key using ftok
-    key_t key = ftok("hey", 100);
-
-    // Allocate the shared memory
-    int shmid = shmget(key, sizeof(shared_memory), IPC_CREAT | 0666);
-    if (shmid == -1) {
-        perror("shmget error");
+    // Create shared memory
+    shared_mem_fd = shm_open(SHARED_MEM_NAME, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+    if (shared_mem_fd == -1) {
+        perror("shm_open");
         exit(EXIT_FAILURE);
     }
-
-    // Attach to the shared memory
-    shared_memory* shm = shmat(shmid, NULL, 0);
-    if (shm == (void*) -1) {
-        perror("shmat error");
+    if (ftruncate(shared_mem_fd, sizeof(int)) == -1) {
+        perror("ftruncate");
         exit(EXIT_FAILURE);
     }
-
-    // Initialize the shared memory values
-    shm->client_id = -1;
-    memset(shm->message, 0, SHM_SIZE);
-
-    // Initialize the mutex lock
-    pthread_mutex_init(&mutex, NULL);
-
-    // Create the threads to handle client requests
-    pthread_t thread;
-    if (pthread_create(&thread, NULL, handle_client, (void*) shm) != 0) {
-        perror("pthread_create error");
+    shared_mem_ptr = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, shared_mem_fd, 0);
+    if (shared_mem_ptr == MAP_FAILED) {
+        perror("mmap");
         exit(EXIT_FAILURE);
     }
-
-    // Wait for the threads to finish
-    pthread_join(thread, NULL);
-
-    // Detach from the shared memory
-    if (shmdt(shm) == -1) {
-        perror("shmdt error");
-        exit(EXIT_FAILURE);
+    *shared_mem_ptr = 0;
+    // Wait for clients to connect
+    while (num_clients < MAX_CLIENTS) {
+        if (*shared_mem_ptr != num_clients) {
+            pthread_mutex_lock(&mutex);
+            num_clients = *shared_mem_ptr;
+            pthread_mutex_unlock(&mutex);
+        }
     }
-
-    // Deallocate the shared memory
-    if (shmctl(shmid, IPC_RMID, NULL) == -1) {
-        perror("shmctl error");
-        exit(EXIT_FAILURE);
+    // Spawn thread to handle client requests
+    pthread_t tid[MAX_CLIENTS];
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        int *arg = malloc(sizeof(*arg));
+        *arg = i;
+        pthread_create(&tid[i], NULL, print_number, arg);
     }
-
+    // Wait for threads to finish
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        pthread_join(tid[i], NULL);
+    }
+    // Cleanup
+    munmap(shared_mem_ptr, sizeof(int));
+    close(shared_mem_fd);
+    shm_unlink(SHARED_MEM_NAME);
     return 0;
 }
