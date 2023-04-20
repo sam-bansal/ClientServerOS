@@ -133,6 +133,10 @@ int main(int c, char *argv[])
 
     if (option == 1)
     {
+      if(shm_res->result==-1){
+        break;
+      }
+
       pthread_mutex_lock(&shm->mutex);
       shm->op = client_id;
       printf("Choose One: \n1.Arithmetic\n2.Even/Odd\n3.isPrime\n4.isNegative\n");

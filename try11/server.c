@@ -143,7 +143,7 @@ int main()
       {
         printf("check0\n");
         pthread_mutex_unlock(&shm->mutex);
-        sleep(10);
+        sleep(2);
         continue;
       }
       else

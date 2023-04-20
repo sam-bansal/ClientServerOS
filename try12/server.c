@@ -238,6 +238,7 @@ int main()
 
     else if(shm_req->type == 5){
       printf("User Deleted: %s\n",name);
+      shm_res->result = -1;
       hash_table_delete(ht,name);
     }
     else if (shm_req->type == 2)
