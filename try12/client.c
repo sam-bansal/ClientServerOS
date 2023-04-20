@@ -60,6 +60,7 @@ int main(int c, char *argv[])
   pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
   pthread_mutex_init(&shm->mutex, &attr);
   pthread_mutexattr_destroy(&attr);
+  
   int client_id = 0;
   while (1)
   {
@@ -122,6 +123,11 @@ int main(int c, char *argv[])
   }
   strcpy(shm->request, "*");
   shm_res = (struct response *)(shm_req2 + 1);
+
+  if(shm->response == -1) { // same username registered more than once, therefore exit the program
+    return -1;
+  }
+
   while (1)
   {
     sleep(5);

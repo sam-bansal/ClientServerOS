@@ -155,7 +155,8 @@ int main()
         if (hash_table_get(ht, name) != -1)
         {
           printf("The user already exists\n");
-          shm->response = hash_table_get(ht, name);
+          // shm->response = hash_table_get(ht, name);
+          shm->response = -1;
         }
         else
         {
