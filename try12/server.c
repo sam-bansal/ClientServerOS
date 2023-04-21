@@ -106,7 +106,7 @@ int is_prime(int n)
 int main()
 {
   struct hash_table *ht = create_hash_table();
-  printf("On the Server side\n");
+  printf("Server started\n");
   int shm_id;
   key_t shm_key;
   shm_key = ftok("server.c", 0);
@@ -124,6 +124,7 @@ int main()
     perror("shmat");
     exit(1);
   }
+  printf("Connect Channel Created at address:%p \n",shm);
   shm->op = -1;
   strcpy(shm->request, "*");
   pthread_mutexattr_t attr;
@@ -162,6 +163,7 @@ int main()
           printf("The user was created\n");
           shm->response = i++; // client id
           hash_table_insert(ht, name, shm->response);
+          // printf("Commuunication Channel for client %p was crea")
         }
         strcpy(shm->request, "!");
         pthread_mutex_unlock(&shm->mutex);
@@ -240,6 +242,12 @@ int main()
       printf("User Deleted: %s\n",name);
       // shm_res->result = -1;
       hash_table_delete(ht,name);
+      // if(shmdt(shm_req)<0){
+      //   perror("shmdt");
+      // }
+      // if(shmctl(comm_id,IPC_RMID,NULL)<0){
+      //   perror("shmclt");
+      // }
     }
     else if (shm_req->type == 2)
     {
