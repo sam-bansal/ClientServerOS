@@ -7,9 +7,9 @@
 #include <math.h>
 #include <limits.h>
 #include <pthread.h>
- 
+
 #define SHM_SIZE 1024
- 
+
 struct request
 {
   pthread_mutex_t mutex2;
@@ -25,12 +25,12 @@ struct init
   int response;
   int op;
 };
- 
+
 struct response
 {
   int result;
 };
- 
+
 int main(int c, char *argv[])
 {
   int shm_id;
@@ -67,7 +67,7 @@ int main(int c, char *argv[])
     if (strcmp(shm->request, "*") == 0)
     {
       strcpy(shm->request, username);
-      printf("The username is being sent %s\n", shm->request);
+      printf("The username being registered is %s\n", shm->request);
       pthread_mutex_unlock(&shm->mutex);
       break;
     }
@@ -81,7 +81,7 @@ int main(int c, char *argv[])
       continue;
     }
   }
-  printf("Hello\n");
+  printf("Hello %s \n", shm->request);
   while (1)
   {
     if (strcmp(shm->request, "!") == 0)
@@ -97,12 +97,12 @@ int main(int c, char *argv[])
       continue;
     }
   }
- 
+
   int option;
- 
+
   struct request *shm_req2;
   struct response *shm_res;
- 
+
   int comm_id2;
   key_t commk2 = ftok("client.c", client_id);
   comm_id2 = shmget(commk2, SHM_SIZE, 0666 | IPC_CREAT);
@@ -112,7 +112,7 @@ int main(int c, char *argv[])
     perror("shmget communication channel");
     exit(1);
   }
- 
+
   shm_req2 = (struct request *)shmat(comm_id2, NULL, 0);
   printf("Reached x\n");
   if (shm_req2 == (struct request *)-1)
@@ -125,25 +125,25 @@ int main(int c, char *argv[])
   while (1)
   {
     sleep(5);
- 
+
     printf("Choose an option: \n1.Send a Request\n2.Unregister\n");
     scanf("%d", &option);
- 
+
     printf("Reached 3 %p\n", shm_res);
- 
+
     if (option == 1)
     {
-      if(shm_res->result==-1){
+      if (shm_res->result == -1)
+      {
         break;
       }
- 
+
       pthread_mutex_lock(&shm->mutex);
       shm->op = client_id;
       printf("Choose One: \n1.Arithmetic\n2.Even/Odd\n3.isPrime\n4.isNegative\n");
       int request_type;
       scanf("%d", &request_type);
-      
- 
+
       if (request_type == 1)
       {
         printf("Enter first operand: \n");
@@ -188,7 +188,7 @@ int main(int c, char *argv[])
       {
         sleep(1);
       }
-      //shm->op = -1;
+      // shm->op = -1;
       if (shm_res->result == INT_MAX)
       {
         printf("Divide by Zero Error\n");
@@ -196,7 +196,7 @@ int main(int c, char *argv[])
       else
       {
         printf("The operands are  %d %d\n", shm_req2->operand1, shm_req2->operand2);
- 
+
         printf("The result is %d\n", shm_res->result);
       }
       pthread_mutex_unlock(&shm->mutex);
@@ -206,25 +206,28 @@ int main(int c, char *argv[])
     {
       // Unregister Code
       pthread_mutex_lock(&shm->mutex);
-      shm_req2->operand1=0;
+      shm_req2->operand1 = 0;
       shm_req2->type = 5;
       shm_req2->operand2 = 0;
-      shm_req2->operator=' ';
-      shm->op=client_id;
-      while(shm_req2->type!=0){
+      shm_req2->operator= ' ';
+      shm->op = client_id;
+      while (shm_req2->type != 0)
+      {
         sleep(1);
       }
-      
+
       pthread_mutex_unlock(&shm->mutex);
-      
-      if(shmdt(shm_req2)<0){
+
+      if (shmdt(shm_req2) < 0)
+      {
         perror("shmdt");
       }
- 
-      if(shmctl(comm_id2,IPC_RMID,NULL)<0){
+
+      if (shmctl(comm_id2, IPC_RMID, NULL) < 0)
+      {
         perror("shmctl");
       }
-      
+
       break;
     }
     else
