@@ -60,7 +60,7 @@ int main(int c, char *argv[])
   pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
   pthread_mutex_init(&shm->mutex, &attr);
   pthread_mutexattr_destroy(&attr);
-  
+
   int client_id = 0;
   while (1)
   {
@@ -108,6 +108,7 @@ int main(int c, char *argv[])
   key_t commk2 = ftok("client.c", client_id);
   comm_id2 = shmget(commk2, SHM_SIZE, 0666 | IPC_CREAT);
   printf("Reached y\n");
+
   if (comm_id2 < 0)
   {
     perror("shmget communication channel");
@@ -124,10 +125,6 @@ int main(int c, char *argv[])
   strcpy(shm->request, "*");
   shm_res = (struct response *)(shm_req2 + 1);
 
-  if(shm->response == -1) { // same username registered more than once, therefore exit the program
-    return -1;
-  }
-
   while (1)
   {
     sleep(5);
@@ -139,11 +136,13 @@ int main(int c, char *argv[])
 
     if (option == 1)
     {
-      if(shm_res->result==-1){
-        break;
-      }
+      // if(shm_res->result==-1){
+      //   break;
+      // }
+      printf("Before mutex\n");
+      pthread_mutex_lock(&shm->mutex); // waits till the lock is released
+      printf("After mutex\n");
 
-      pthread_mutex_lock(&shm->mutex);
       shm->op = client_id;
       printf("Choose One: \n1.Arithmetic\n2.Even/Odd\n3.isPrime\n4.isNegative\n");
       int request_type;
