@@ -241,6 +241,12 @@ int main()
       printf("User Deleted: %s\n",name);
       shm_res->result = -1;
       hash_table_delete(ht,name);
+      // if(shmdt(shm_req)<0){
+      //   perror("shmdt");
+      // }
+      // if(shmctl(comm_id,IPC_RMID,NULL)<0){
+      //   perror("shmclt");
+      // }
     }
     else if (shm_req->type == 2)
     {

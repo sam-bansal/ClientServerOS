@@ -139,9 +139,7 @@ int main(int c, char *argv[])
 
     if (option == 1)
     {
-      if(shm_res->result==-1){
-        break;
-      }
+      
 
       pthread_mutex_lock(&shm->mutex);
       shm->op = client_id;
@@ -224,6 +222,12 @@ int main(int c, char *argv[])
       }
       shm->op = -1;
       pthread_mutex_unlock(&shm->mutex);
+      if(shmdt(shm_req2)<0){
+        perror("shmdt");
+      }
+      if(shmctl(comm_id2,IPC_RMID,NULL)<0){
+        perror("shmclt");
+      }
       break;
     }
     else
