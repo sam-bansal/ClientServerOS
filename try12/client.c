@@ -136,12 +136,16 @@ int main(int c, char *argv[])
 
     if (option == 1)
     {
+<<<<<<< HEAD
+      
+=======
       // if(shm_res->result==-1){
       //   break;
       // }
       printf("Before mutex\n");
       pthread_mutex_lock(&shm->mutex); // waits till the lock is released
       printf("After mutex\n");
+>>>>>>> 2098111f449c6253ef885f9ffa823743bc3b1d0d
 
       shm->op = client_id;
       printf("Choose One: \n1.Arithmetic\n2.Even/Odd\n3.isPrime\n4.isNegative\n");
@@ -223,6 +227,12 @@ int main(int c, char *argv[])
       }
       shm->op = -1;
       pthread_mutex_unlock(&shm->mutex);
+      if(shmdt(shm_req2)<0){
+        perror("shmdt");
+      }
+      if(shmctl(comm_id2,IPC_RMID,NULL)<0){
+        perror("shmclt");
+      }
       break;
     }
     else
