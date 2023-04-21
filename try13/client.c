@@ -30,9 +30,16 @@ struct response
 {
   int result;
 };
+void signal_callback_handler(int signum) {
+  //  cout << "Caught signal " << signum << endl;
+   // Terminate program
+   printf("in sigint \n");
+   exit(signum);
+}
 
 int main(int c, char *argv[])
 {
+  signal(SIGINT, signal_callback_handler);
   int shm_id;
   key_t shm_key;
   shm_key = ftok("server.c", 0);
