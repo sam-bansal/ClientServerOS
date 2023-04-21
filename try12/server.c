@@ -156,13 +156,12 @@ int main()
         if (hash_table_get(ht, name) != -1)
         {
           printf("The user already exists\n");
-          // shm->response = hash_table_get(ht, name);
-          shm->response = -1;
+          shm->response = hash_table_get(ht, name);
         }
         else
         {
           printf("The user was created\n");
-          shm->response = i++;
+          shm->response = i++; // client id
           hash_table_insert(ht, name, shm->response);
           // printf("Commuunication Channel for client %p was crea")
         }
@@ -241,7 +240,7 @@ int main()
 
     else if(shm_req->type == 5){
       printf("User Deleted: %s\n",name);
-      shm_res->result = -1;
+      // shm_res->result = -1;
       hash_table_delete(ht,name);
     }
     else if (shm_req->type == 2)
