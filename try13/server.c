@@ -13,7 +13,7 @@
 
 char *register_failed = "Registration Unsuccesful";
 
-int i = 0;
+int i = 1;
 pthread_t th[10];
 struct init
 {
