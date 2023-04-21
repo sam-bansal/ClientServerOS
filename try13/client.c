@@ -142,7 +142,7 @@ int main(int c, char *argv[])
       printf("Choose One: \n1.Arithmetic\n2.Even/Odd\n3.isPrime\n4.isNegative\n");
       int request_type;
       scanf("%d", &request_type);
-      int client_id = 0;
+      
  
       if (request_type == 1)
       {
@@ -188,7 +188,7 @@ int main(int c, char *argv[])
       {
         sleep(1);
       }
-      shm->op = -1;
+      //shm->op = -1;
       if (shm_res->result == INT_MAX)
       {
         printf("Divide by Zero Error\n");
@@ -205,6 +205,27 @@ int main(int c, char *argv[])
     else if (option == 2)
     {
       // Unregister Code
+      pthread_mutex_lock(&shm->mutex);
+      shm_req2->operand1=0;
+      shm_req2->type = 5;
+      shm_req2->operand2 = 0;
+      shm_req2->operator=' ';
+      shm->op=client_id;
+      while(shm_req2->type!=0){
+        sleep(1);
+      }
+      
+      pthread_mutex_unlock(&shm->mutex);
+      
+      if(shmdt(shm_req2)<0){
+        perror("shmdt");
+      }
+ 
+      if(shmctl(comm_id2,IPC_RMID,NULL)<0){
+        perror("shmctl");
+      }
+      
+      break;
     }
     else
     {

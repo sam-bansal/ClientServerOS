@@ -55,14 +55,15 @@ int is_prime(int n)
 void *handle_client(void *arg)
 {
   //struct request *shm_req = (struct request *)arg;
-  int client_id=(int) arg;
-  printf("Currently running on thread %p\n",th[client_id]);
+  int *client_id=(int *) arg;
+  int ct=*client_id;
+  printf("Currently running on thread  %p %d \n",&th[ct],ct);
   // printf("The username is: %s\n", shm_req->username);
  // printf("%d%d\n", shm_req->operand1, shm_req->operand2);
-  struct request *shm_req=malloc(sizeof(struct request));
+     struct request *shm_req=malloc(sizeof(struct request));
     struct response *shm_res=malloc(sizeof(struct response));
     int comm_id;
-    key_t comm_key = ftok("client.c", client_id);
+    key_t comm_key = ftok("client.c", ct);
  
     comm_id = shmget(comm_key, SHM_SIZE, 0666 | IPC_CREAT);
  
@@ -84,9 +85,11 @@ void *handle_client(void *arg)
     printf("Reached 3 \n");
     while(1)
     {
+       
     while (shm_req->type == 0)
     {
-      
+     //  printf(" 49 \n");
+     sleep(1);
     }
     printf("Reached 41 \n");
   if (shm_req->type == 1)
@@ -118,6 +121,12 @@ void *handle_client(void *arg)
     {
       printf("Invalid operator: %c\n", shm_req->operator);
     }
+  }
+  else if(shm_req->type==5){
+    printf("User Deleted: \n");
+    shm_req->type=0;
+    pthread_cancel(pthread_self());
+    printf("User Deleted: \n");
   }
   else if (shm_req->type == 2)
   {
@@ -201,7 +210,7 @@ int main()
           printf("The user was created\n");
           shm->response = i++;
           hash_table_insert(ht, name, shm->response);
-          if (pthread_create(&th[shm->response-1], NULL, handle_client, (void*) shm->response-1) != 0) {
+          if (pthread_create(&th[shm->response-1], NULL, handle_client,  &shm->response) != 0) {
 			perror("pthread_create error");
 			exit(EXIT_FAILURE);
 		}
