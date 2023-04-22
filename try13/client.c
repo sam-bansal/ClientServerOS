@@ -33,7 +33,7 @@ struct response
 void signal_callback_handler(int signum) {
   //  cout << "Caught signal " << signum << endl;
    // Terminate program
-   printf("in sigint \n");
+   printf("\n You are now disconnected, \n you may log connect with same username \n");
    exit(signum);
 }
 
