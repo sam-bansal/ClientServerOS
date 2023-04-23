@@ -18,6 +18,8 @@ struct request
     int operand1;
     int operand2;
     char operator;
+    int result;
+    int count;
 };
 struct init
 {

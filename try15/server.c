@@ -139,12 +139,17 @@
                 hash_table_delete(ht, name);
                 printf("Client getting deleted...... \n");
                 shm_req->type = 0;
-                  printf("Client getting deleted...... \n");
-                pthread_cancel(pthread_self());
+                printf("Client getting deleted...... \n");
+                
                 printf("Client successfully Deleted \n");
+                shm_req->count=0;
+               free(shm_req);
                 pthread_mutex_unlock(&mutex1);
-                free(shm_req);
-                free(shm_res);
+              
+               // free(shm_res);
+                pthread_cancel(pthread_self());
+                 pthread_exit(NULL); 
+               
             }
             else if (shm_req->type == 2)
             {
