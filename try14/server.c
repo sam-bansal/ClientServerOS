@@ -16,7 +16,7 @@ char *register_failed = "Registration Unsuccesful";
 int i = 1;
 pthread_t th[10];
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
-
+struct hash_table *ht ;
 struct init
 {
     pthread_mutex_t mutex;
@@ -55,8 +55,8 @@ int is_prime(int n)
 void *handle_client(void *arg)
 {
     // struct request *shm_req = (struct request *)arg;
-    int *client_id = (int *)arg;
-    int ct = *client_id;
+    char *name = (char *)arg;
+    int ct = hash_table_get(ht,name);
     printf("Worker thread ( %p ) created for client id : %d \n", &th[ct], ct);
     // printf("The username is: %s\n", shm_req->username);
     // printf("%d%d\n", shm_req->operand1, shm_req->operand2);
@@ -130,6 +130,7 @@ void *handle_client(void *arg)
         {
             printf("Client getting deleted...... \n");
             shm_req->type = 0;
+            hash_table_delete(ht,name);
             pthread_cancel(pthread_self());
             printf("Client successfully Deleted \n");
         }
@@ -157,7 +158,7 @@ void *handle_client(void *arg)
 
 int main()
 {
-    struct hash_table *ht = create_hash_table();
+    ht=create_hash_table();
     printf("On the Server side\n");
     int shm_id;
     key_t shm_key;
@@ -215,7 +216,7 @@ int main()
                 printf("The user was created\n");
                 shm->response = i++;
                 hash_table_insert(ht, name, shm->response);
-                if (pthread_create(&th[shm->response - 1], NULL, handle_client, &shm->response) != 0)
+                if (pthread_create(&th[shm->response - 1], NULL, handle_client, &name) != 0)
                 {
                     perror("pthread_create error");
                     exit(EXIT_FAILURE);
