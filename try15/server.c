@@ -17,6 +17,7 @@
     int i = 1;
     pthread_t th[10];
     pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+    int total_request_count = 0;
      
     struct init
     {
@@ -166,6 +167,7 @@
             pthread_mutex_unlock(&mutex1);
             printf("THREAD %d HAS UNLOCKED THE SERVER\n", ct);
             printf("Request Count for client id %d is : %d\n", ct, shm_req->count);
+            printf("Total request count is: %d\n",++total_request_count);
         }
     }
      
