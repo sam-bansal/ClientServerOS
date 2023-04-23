@@ -11,10 +11,16 @@
 
 #define SHM_SIZE 1024
 
+#define PRINT_INFO(MSG, ...) printf ( "%s INFO %d:%d %ld %s %s %d : " MSG ";;\n", \
+	"TODO_PRINT_TIME", getpid(), getppid(), pthread_self(), __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+
+
+#define PRINT_ERROR(MSG, ...) printf ( "%s ERROR %d:%d %ld %s %s %d : " MSG ";;\n", \
+	"TODO_PRINT_TIME", getpid(), getppid(), pthread_self(), __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+    
 char *register_failed = "Registration Unsuccesful";
 int count = 0;
 int user_count[10];
-// aajkfnjeabfbn
 int i = 1;
 pthread_t th[10];
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
@@ -36,6 +42,7 @@ struct request
     int operand2;
     char operator;
     int result;
+    char username[50];
 };
 struct response
 {
@@ -58,12 +65,11 @@ int is_prime(int n)
 
 void *handle_client(void *arg)
 {
-    // struct request *shm_req = (struct request *)arg;
+   
     char *name = (char *)arg;
     int ct = hash_table_get(ht, name);
     printf("Worker thread ( %p ) created for client id : %d \n", &th[ct], ct);
-    // printf("The username is: %s\n", shm_req->username);
-    // printf("%d%d\n", shm_req->operand1, shm_req->operand2);
+
     struct request *shm_req = malloc(sizeof(struct request));
     struct response *shm_res = malloc(sizeof(struct response));
     int comm_id;
@@ -76,10 +82,10 @@ void *handle_client(void *arg)
         perror("shmget communication channel");
         exit(1);
     }
-    // printf("Communication Channel opened for client %d at Communication id %d\n", ct, comm_id);
+   
 
     shm_req = (struct request *)shmat(comm_id, NULL, 0);
-    // printf("Reached x \n");
+   
     if (shm_req == (struct request *)-1)
     {
         perror("shmat communication channel");
@@ -87,14 +93,13 @@ void *handle_client(void *arg)
     }
     shm_res = (struct response *)(shm_req + 1);
 
-    // printf("Reached 3 \n");
+   
     printf("Communication Channel opened for client %d at Communication id %d\n", ct, comm_id);
     while (1)
     {
-
+        sleep(2);
         while (shm_req->type == 0)
         {
-            //  printf(" 49 \n");
             sleep(1);
         }
         printf("Service Request Received from client \n");
@@ -103,24 +108,16 @@ void *handle_client(void *arg)
         count++;
         printf("Total requests processed by the server is %d \n", count);
         int index = hash(name);
-        // struct node* curr = ht1->buckets[index];
-        // while(curr!=NULL){
-        //  if(strcmp(curr->key,name)==0){
-        //   curr->value = curr->value +1;
+        
         printf("The number of requests sent by  the user %d is %d \n", ct, ++user_count[ct]);
-        // break;
-        //}
-        // }
+       
         if (shm_req->type == 1)
         {
-            // printf("The username is: %s\n", shm_req->username);
-            // printf("operand1: %d, operand2: %d received\n", shm_req->operand1, shm_req->operand2);
             printf("Computing the result.... \n");
             if (shm_req->operator== '+')
             {
                 int x = shm_req->operand1 + shm_req->operand2;
                 shm_req->result = x;
-                // printf("%d%d\n", shm_req->operand1, shm_req->operand2);
             }
             else if (shm_req->operator== '-')
                 shm_req->result = shm_req->operand1 - shm_req->operand2;
@@ -145,10 +142,25 @@ void *handle_client(void *arg)
         else if (shm_req->type == 5)
         {
             printf("Client getting deleted...... \n");
-            shm_req->type = 0;
-            //  printf("Client getting deleted...... \n");
-            hash_table_delete(ht, name);
+            char *username=malloc(sizeof(char*));
+            printf("sdfas\n");
+            for (int i = 0; i < TABLE_SIZE; i++) {
+                struct node* curr = ht->buckets[i];
+                while (curr != NULL) {
+                    if(curr->value==shm_req->operand2)
+                    {
+                    strcpy(username,curr->key);
+                    printf("The user being delete is : %s\n",curr->key);
+                    break;
+                    }
+                    curr = curr->next;
+                }
+            }
+            //printf("The user being delete is : %s\n",username);
+            hash_table_delete(ht, username);
             printf("Client  deleted...... \n");
+            printf("Current List Of Users\n");
+            print_hash_table(ht);
             shm_req->type = 0;
             pthread_mutex_unlock(&mutex1);
             pthread_cancel(pthread_self());
@@ -165,16 +177,27 @@ void *handle_client(void *arg)
                 shm_req->result = 0; // Odd
             }
         }
-        else
+        else if(shm_req->type == 3)
         {
             shm_req->result = is_prime(shm_req->operand1);
         }
-
-        printf("Server responds with result : %d \n", shm_req->result);
+        else if(shm_req->type == 4){
+            printf("This functionality is not available yet\n");
+            shm_req->type = 0;
+            pthread_mutex_unlock(&mutex1);
+            printf("THREAD %d HAS UNLOCKED THE SERVER\n", ct);
+            continue; 
+        }else{
+            printf("Invalid input entered\n");
+            shm_req->type = 0;
+            pthread_mutex_unlock(&mutex1);
+            printf("THREAD %d HAS UNLOCKED THE SERVER\n", ct);
+            continue;
+        }
+        printf("Server responded to client %d request with result : %d \n",ct,shm_req->result);
         shm_res->result = shm_req->result;
         shm_res->clientId = ct;
         shm_req->type = 0;
-        // user_count[ct];
 
         pthread_mutex_unlock(&mutex1);
         printf("THREAD %d HAS UNLOCKED THE SERVER\n", ct);
@@ -214,14 +237,9 @@ int main()
 
     while (1)
     {
-        printf("Reached 1\n");
-        // while (shm->op == -1)
-
         pthread_mutex_lock(&shm->mutex);
-        // printf("Inside while %s\n", shm->request);
         if (strcmp(shm->request, "*") == 0)
         {
-            // printf("check0\n");
             pthread_mutex_unlock(&shm->mutex);
             sleep(2);
             continue;
@@ -241,8 +259,9 @@ int main()
             {
                 printf("The user was created\n");
                 shm->response = i;
-
                 hash_table_insert(ht, name, shm->response);
+                printf("Current List Of Users\n");
+                print_hash_table(ht);
                 user_count[i++] = 0;
                 if (pthread_create(&th[shm->response - 1], NULL, handle_client, &name) != 0)
                 {
@@ -255,7 +274,5 @@ int main()
             sleep(5);
             continue;
         }
-        // if (shm->op != -1)
-        //   break;
     }
 }

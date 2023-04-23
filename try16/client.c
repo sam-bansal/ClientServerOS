@@ -11,6 +11,13 @@
 
 #define SHM_SIZE 1024
 
+#define PRINT_INFO(MSG, ...) printf ( "%s INFO %d:%d %ld %s %s %d : " MSG ";;\n", \
+	"TODO_PRINT_TIME", getpid(), getppid(), pthread_self(), __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+
+
+#define PRINT_ERROR(MSG, ...) printf ( "%s ERROR %d:%d %ld %s %s %d : " MSG ";;\n", \
+	"TODO_PRINT_TIME", getpid(), getppid(), pthread_self(), __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+    
 struct request
 {
     pthread_mutex_t mutex2;
@@ -20,6 +27,7 @@ struct request
     char operator;
     int result;
     int count;
+    char username[50];
 };
 struct init
 {
@@ -37,8 +45,7 @@ struct response
 };
 void signal_callback_handler(int signum)
 {
-    //  cout << "Caught signal " << signum << endl;
-    // Terminate program
+    
     printf("\n You are now disconnected, \n you may re-connect with the same username \n");
     exit(signum);
 }
@@ -56,12 +63,10 @@ int main(int c, char *argv[])
         exit(1);
     }
     struct init *shm;
-    // char *shmptr, *temp;
-    // shmptr = shmat(shm_id, NULL, 0);
+
     char username[50];
     strcpy(username, argv[1]);
-    // printf("Enter a username: ");
-    // scanf("%s", &username);
+
     shm = (struct init *)shmat(shm_id, NULL, 0);
     if (shm == (struct init *)-1)
     {
@@ -119,7 +124,6 @@ int main(int c, char *argv[])
     int comm_id2;
     key_t commk2 = ftok("client.c", client_id);
     comm_id2 = shmget(commk2, SHM_SIZE, 0666 | IPC_CREAT);
-    printf("Reached y\n");
     if (comm_id2 < 0)
     {
         perror("shmget communication channel");
@@ -127,18 +131,17 @@ int main(int c, char *argv[])
     }
 
     shm_req2 = (struct request *)shmat(comm_id2, NULL, 0);
-    printf("Reached x\n");
     if (shm_req2 == (struct request *)-1)
     {
         perror("shmat communication channel");
         exit(1);
     }
     strcpy(shm->request, "*");
+    shm_req2->type =0;
     shm_res = (struct response *)(shm_req2 + 1);
     while (1)
     {
-        sleep(3);
-
+        sleep(2);
         printf("Choose an option: \n1.Send a Request\n2.Unregister\n");
         scanf("%d", &option);
 
@@ -146,8 +149,6 @@ int main(int c, char *argv[])
 
         if (option == 1)
         {
-
-            //  pthread_mutex_lock(&shm->mutex);
             shm->op = client_id;
             printf("Choose an operation: \n1.Arithmetic\n2.Even/Odd\n3.isPrime\n4.isNegative\n");
             int request_type;
@@ -186,12 +187,12 @@ int main(int c, char *argv[])
             else if (request_type == 4)
             {
                 printf("This functionality is not available yet.\n");
+                shm_req2->type = 4;
                 continue;
             }
             else
             {
                 printf("Please enter a valid input\n");
-                shm_req2->type=0;
                 continue;
             }
             printf("Reached 2\n");
@@ -199,7 +200,6 @@ int main(int c, char *argv[])
             {
                 sleep(1);
             }
-            // shm->op = -1;
             if (shm_res->result == INT_MAX)
             {
                 printf("Divide by Zero Error\n");
@@ -210,17 +210,18 @@ int main(int c, char *argv[])
                 printf("YOUR CLIENT ID IS %d \n",shm_res->clientID);
                 printf("The result is %d\n", shm_res->result);
             }
-            // pthread_mutex_unlock(&shm->mutex);
+
             printf("REACHED \n");
         }
         else if (option == 2)
         {
-            // Unregister Code
             pthread_mutex_lock(&shm->mutex);
             shm_req2->operand1 = 0;
             shm_req2->type = 5;
-            shm_req2->operand2 = 0;
+            shm_req2->operand2 = client_id;
             shm_req2->operator= ' ';
+            strcpy(shm_req2->username,username);
+            printf("The user being delete is : %s\n",shm_req2->username);
             shm->op = client_id;
             while (shm_req2->type != 0)
             {

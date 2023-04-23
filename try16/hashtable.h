@@ -108,3 +108,14 @@ void hash_table_delete(struct hash_table *ht, char *key)
     curr = curr->next;
   }
 }
+
+// print the hash table
+void print_hash_table(struct hash_table* ht) {
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        struct node* curr = ht->buckets[i];
+        while (curr != NULL) {
+            printf("%s: %d\n", curr->key, curr->value);
+            curr = curr->next;
+        }
+    }
+}
