@@ -68,7 +68,8 @@ void *handle_client(void *arg)
    
     char *name = (char *)arg;
     int ct = hash_table_get(ht, name);
-    printf("Worker thread ( %p ) created for client id : %d \n", &th[ct], ct);
+    //printf("Worker thread ( %p ) created for client id : %d \n", &th[ct], ct);
+    PRINT_INFO("Worker Thread %p Created for client id: %d ",&th[ct],ct);
 
     struct request *shm_req = malloc(sizeof(struct request));
     struct response *shm_res = malloc(sizeof(struct response));
@@ -79,7 +80,8 @@ void *handle_client(void *arg)
 
     if (comm_id < 0)
     {
-        perror("shmget communication channel");
+        // perror("shmget communication channel");
+        PRINT_ERROR("shmget communication channel");
         exit(1);
     }
    
@@ -226,7 +228,8 @@ int main()
         perror("shmat");
         exit(1);
     }
-    printf("Connect Channel opened at address : %p\n", shm);
+    PRINT_INFO("Connect Channel opened at address : %p",shm);
+    // printf("Connect Channel opened at address : %p\n", shm);
     shm->op = -1;
     strcpy(shm->request, "*");
     pthread_mutexattr_t attr;

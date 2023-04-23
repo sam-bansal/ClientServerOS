@@ -45,8 +45,9 @@ struct response
 };
 void signal_callback_handler(int signum)
 {
-    
-    printf("\n You are now disconnected, \n you may re-connect with the same username \n");
+
+    // printf("\n You are now disconnected, \n you may re-connect with the same username \n");
+    PRINT_INFO("\n You are now disconnected, \n you may re-connect with the same username \n");
     exit(signum);
 }
 
@@ -59,7 +60,8 @@ int main(int c, char *argv[])
     shm_id = shmget(shm_key, SHM_SIZE, 0666);
     if (shm_id < 0)
     {
-        perror("shmget");
+        PRINT_ERROR("shmget");
+        // perror("shmget");
         exit(1);
     }
     struct init *shm;
@@ -70,7 +72,8 @@ int main(int c, char *argv[])
     shm = (struct init *)shmat(shm_id, NULL, 0);
     if (shm == (struct init *)-1)
     {
-        perror("shmat");
+        PRINT_ERROR("shmat");
+        // perror("shmat");
         exit(1);
     }
     pthread_mutexattr_t attr;
@@ -85,7 +88,8 @@ int main(int c, char *argv[])
         if (strcmp(shm->request, "*") == 0)
         {
             strcpy(shm->request, username);
-            printf("The username is being sent %s\n", shm->request);
+            //printf("The username is being sent %s\n", shm->request);
+            PRINT_INFO("Username being sent is %s", shm->request);
             pthread_mutex_unlock(&shm->mutex);
             break;
         }
@@ -99,13 +103,16 @@ int main(int c, char *argv[])
             continue;
         }
     }
-    printf("Hello %s\n", shm->request);
+    // printf("Hello %s\n", shm->request);
+    PRINT_INFO("Hello %s", shm->request);
+
     while (1)
     {
         if (strcmp(shm->request, "!") == 0)
         {
             strcpy(shm->request, "*");
-            printf("The client id is: %d\n", shm->response);
+            // printf("The client id is: %d\n", shm->response);
+            PRINT_INFO("The client id is: %d", shm->response);
             client_id = shm->response;
             pthread_mutex_unlock(&shm->mutex);
             break;
@@ -126,14 +133,16 @@ int main(int c, char *argv[])
     comm_id2 = shmget(commk2, SHM_SIZE, 0666 | IPC_CREAT);
     if (comm_id2 < 0)
     {
-        perror("shmget communication channel");
+        // perror("shmget communication channel");
+        PRINT_ERROR("shmget communication channel");
         exit(1);
     }
 
     shm_req2 = (struct request *)shmat(comm_id2, NULL, 0);
     if (shm_req2 == (struct request *)-1)
     {
-        perror("shmat communication channel");
+        // perror("shmat communication channel");
+        PRINT_ERROR("shmat communication channel");
         exit(1);
     }
     strcpy(shm->request, "*");
@@ -145,7 +154,7 @@ int main(int c, char *argv[])
         printf("Choose an option: \n1.Send a Request\n2.Unregister\n");
         scanf("%d", &option);
 
-        printf("Reached 3 %p\n", shm_res);
+        
 
         if (option == 1)
         {
@@ -173,7 +182,7 @@ int main(int c, char *argv[])
                 shm_req2->operand2 = 0;
                 shm_req2->operator= ' ';
                 getchar();
-                printf("Reached \n");
+                // printf("Reached \n");
             }
             else if (request_type == 3)
             {
@@ -195,7 +204,7 @@ int main(int c, char *argv[])
                 printf("Please enter a valid input\n");
                 continue;
             }
-            printf("Reached 2\n");
+            // printf("Reached 2\n");
             while (shm_req2->type != 0)
             {
                 sleep(1);
@@ -208,7 +217,8 @@ int main(int c, char *argv[])
             {
                 printf("The operands are  %d %d\n", shm_req2->operand1, shm_req2->operand2);
                 printf("YOUR CLIENT ID IS %d \n",shm_res->clientID);
-                printf("The result is %d\n", shm_res->result);
+                PRINT_INFO("Result is %d", shm_res->result);
+                // printf("The result is %d\n", shm_res->result);
             }
 
             printf("REACHED \n");
@@ -221,7 +231,8 @@ int main(int c, char *argv[])
             shm_req2->operand2 = client_id;
             shm_req2->operator= ' ';
             strcpy(shm_req2->username,username);
-            printf("The user being delete is : %s\n",shm_req2->username);
+            PRINT_INFO("The user being deleted is : %s", shm_req2->username);
+            //printf("The user being delete is : %s\n",shm_req2->username);
             shm->op = client_id;
             while (shm_req2->type != 0)
             {
@@ -232,21 +243,25 @@ int main(int c, char *argv[])
 
             if (shmdt(shm_req2) < 0)
             {
-                perror("shmdt");
+                //perror("shmdt");
+                PRINT_ERROR("shmdt");
             }
 
             if (shmctl(comm_id2, IPC_RMID, NULL) < 0)
             {
-                perror("shmctl");
+                PRINT_ERROR("shmctl");
+                //perror("shmctl");
             }
-            printf("You have been succesfully uregistered\nThe comm channel for current client has been deleted\n");
+            PRINT_INFO("You have been succesfully uregistered\nThe comm channel for current client has been deleted ");
+            //printf("You have been succesfully uregistered\nThe comm channel for current client has been deleted\n");
 
             break;
         }
         else
         {
             // Error in choosing option
-            printf("Please Enter a Valid option\n");
+            PRINT_INFO("Please Enter a Valid option ");
+            //printf("Please Enter a Valid option\n");
         }
     }
 }
